@@ -1,14 +1,10 @@
 """
 Exploratory Data Analysis Assignment - Wine Quality Dataset
 Student: Joshua Gulizia
-GitHub Username: joshuagulizia
-PS: [Please add your PS number here]
-
-This assignment explores the relationships between different wine attributes 
-and their potential impact on quality using statistical analysis and visualization.
+GitHub Username: jguliz
+PS: 2269002
 """
 
-# Import required libraries
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -19,110 +15,73 @@ from sklearn.preprocessing import StandardScaler
 import warnings
 warnings.filterwarnings('ignore')
 
-# Set style for better plots
 plt.style.use('seaborn-v0_8')
 sns.set_palette("husl")
-
-# Enable interactive mode for navigation
 plt.ion()
-
-# Create a list to store all figures for navigation
 figures = []
 current_figure = 0
-
-# Set matplotlib backend to ensure plots display
 import matplotlib
-matplotlib.use('TkAgg')  # Use TkAgg backend for better compatibility
+matplotlib.use('TkAgg')
 
 def calculate_feature_importance(df):
-    """Calculate feature importance for wine quality prediction"""
-    # Prepare data
     X = df.drop('quality', axis=1)
     y = df['quality']
-    
-    # Standardize features
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-    
-    # Train Random Forest model
     rf = RandomForestRegressor(n_estimators=100, random_state=42)
     rf.fit(X_scaled, y)
-    
-    # Get feature importance
     feature_importance = pd.DataFrame({
         'feature': X.columns,
         'importance': rf.feature_importances_
     }).sort_values('importance', ascending=False)
-    
     return feature_importance
 
 def show_plot(title, plot_func, plot_number, total_plots, *args, **kwargs):
-    """Create and show a single plot with navigation"""
     fig = plt.figure(figsize=(12, 8))
     fig.suptitle(title, fontsize=16, fontweight='bold')
-    
-    # Call the plot function
     plot_func(fig, *args, **kwargs)
-    
-    # Navigation instructions removed for cleaner display
-    
-    # Set up keyboard navigation
     def on_key(event):
-        if event.key == ' ' and plot_number < total_plots:  # Space bar for next
+        if event.key == ' ' and plot_number < total_plots:
             plt.close(fig)
-        elif event.key == 'escape':  # ESC to exit
+        elif event.key == 'escape':
             plt.close('all')
-    
     fig.canvas.mpl_connect('key_press_event', on_key)
     plt.tight_layout()
-    plt.show(block=True)  # Block execution until window is closed
+    plt.show(block=True)
     return fig
 
-# Load the wine quality dataset
-# Note: The UCI dataset uses semicolons as separators
 try:
-    # Try to load with semicolon separator
     df = pd.read_csv('winequality-red.csv', sep=';')
 except FileNotFoundError:
     try:
         df = pd.read_csv('winequality.csv', sep=';')
     except FileNotFoundError:
-        print("Please ensure the wine quality dataset is available in the current directory")
-        print("You can download it from: https://archive.ics.uci.edu/ml/datasets/wine+quality")
-        exit()
+        try:
+            df = pd.read_csv('HW1/winequality-red.csv', sep=';')
+        except FileNotFoundError:
+            print("Wine quality dataset is not found")
+            exit()
 
 print("Dataset loaded successfully!")
 print(f"Dataset shape: {df.shape}")
 print(f"Columns: {list(df.columns)}")
-
-# Display basic info about the dataset
 print("\nDataset Info:")
 print(df.info())
-
-# Display first few rows
 print("\nFirst 5 rows:")
 print(df.head())
-
-# =============================================================================
-# TASK 1: Compute summary statistics of each attribute
-# =============================================================================
 
 print("\n" + "="*80)
 print("TASK 1: SUMMARY STATISTICS")
 print("="*80)
 
-# Compute comprehensive summary statistics
 summary_stats = df.describe()
 print("\nSummary Statistics:")
 print(summary_stats)
-
-# Additional statistics
 print("\nAdditional Statistics:")
 print(f"Skewness:\n{df.skew()}")
 print(f"\nKurtosis:\n{df.kurtosis()}")
 print(f"\nMissing values:\n{df.isnull().sum()}")
 
-# Calculate feature importance
 print("\n" + "-"*50)
 print("FEATURE IMPORTANCE ANALYSIS:")
 print("-"*50)
@@ -131,7 +90,6 @@ feature_importance = calculate_feature_importance(df)
 print("\nFeature Importance (Random Forest):")
 print(feature_importance)
 
-# Get the two most important features
 top_features = feature_importance.head(2)
 feature1 = top_features.iloc[0]['feature']
 feature2 = top_features.iloc[1]['feature']
@@ -142,7 +100,6 @@ print(f"\nTop 2 Most Important Features:")
 print(f"1. {feature1}: {importance1:.4f}")
 print(f"2. {feature2}: {importance2:.4f}")
 
-# My two favorite statistical measures based on feature importance:
 print("\n" + "-"*50)
 print("MY TWO FAVORITE STATISTICAL MEASURES:")
 print("-"*50)
@@ -165,34 +122,25 @@ have the highest feature importance scores, meaning they contribute most signifi
 to the model's ability to predict wine quality accurately.
 """)
 
-# =============================================================================
-# TASK 2: Compute correlations for each pair of attributes
-# =============================================================================
-
 print("\n" + "="*80)
 print("TASK 2: CORRELATION ANALYSIS")
 print("="*80)
 
-# Compute correlation matrix
 correlation_matrix = df.corr()
 print("\nCorrelation Matrix:")
 print(correlation_matrix)
 
-# Find strongest correlations (excluding self-correlations)
 corr_pairs = []
 for i in range(len(correlation_matrix.columns)):
     for j in range(i+1, len(correlation_matrix.columns)):
         corr_val = correlation_matrix.iloc[i, j]
         corr_pairs.append((correlation_matrix.columns[i], correlation_matrix.columns[j], corr_val))
 
-# Sort by absolute correlation value
 corr_pairs.sort(key=lambda x: abs(x[2]), reverse=True)
 
 print("\nTop 10 Strongest Correlations:")
 for i, (attr1, attr2, corr) in enumerate(corr_pairs[:10]):
     print(f"{i+1:2d}. {attr1} - {attr2}: {corr:.4f}")
-
-# Define plot functions for navigation
 def plot_correlation_heatmap(fig):
     ax = fig.add_subplot(111)
     mask = np.triu(np.ones_like(correlation_matrix, dtype=bool))
@@ -206,8 +154,6 @@ def plot_residual_sugar_ph(fig):
     ax.set_xlabel('Residual Sugar (g/dm³)', fontsize=12)
     ax.set_ylabel('pH', fontsize=12)
     ax.grid(True, alpha=0.3)
-    
-    # Add correlation coefficient
     corr_coef = df['residual sugar'].corr(df['pH'])
     ax.text(0.05, 0.95, f'Correlation: {corr_coef:.4f}', 
             transform=ax.transAxes, fontsize=12, 
@@ -219,8 +165,6 @@ def plot_fixed_acidity_citric_acid(fig):
     ax.set_xlabel('Fixed Acidity (g/dm³)', fontsize=12)
     ax.set_ylabel('Citric Acid (g/dm³)', fontsize=12)
     ax.grid(True, alpha=0.3)
-    
-    # Add correlation coefficient
     corr_coef = df['fixed acidity'].corr(df['citric acid'])
     ax.text(0.05, 0.95, f'Correlation: {corr_coef:.4f}', 
             transform=ax.transAxes, fontsize=12, 
@@ -233,8 +177,6 @@ def plot_quality_histogram(fig):
     ax.set_ylabel('Frequency', fontsize=12)
     ax.set_xticks(range(3, 9))
     ax.grid(True, alpha=0.3)
-    
-    # Add statistics
     mean_quality = df['quality'].mean()
     median_quality = df['quality'].median()
     ax.axvline(mean_quality, color='red', linestyle='--', linewidth=2, label=f'Mean: {mean_quality:.2f}')
@@ -298,14 +240,12 @@ def plot_box_plots(fig):
     ax4.set_ylabel('pH')
     ax4.grid(True, alpha=0.3)
 
-# Create correlation heatmap
 show_plot('Correlation Matrix of Wine Quality Attributes', plot_correlation_heatmap, 1, 5)
 
 print("\n" + "-"*50)
 print("CORRELATION INTERPRETATION:")
 print("-"*50)
 
-# Focus on correlations with the most important features
 print(f"""
 Key Statistical Findings from Correlation Analysis:
 
@@ -343,10 +283,6 @@ MOST IMPORTANT FEATURES CORRELATIONS:
    - Chlorides show moderate correlations with other attributes
 """)
 
-# =============================================================================
-# TASK 3: Scatter plot for residual sugar and pH
-# =============================================================================
-
 print("\n" + "="*80)
 print("TASK 3: SCATTER PLOT - RESIDUAL SUGAR vs pH")
 print("="*80)
@@ -380,10 +316,6 @@ This suggests that:
    would not be a reliable indicator of pH levels, and pH is more likely 
    influenced by the acid content (fixed acidity, citric acid, volatile acidity).
 """)
-
-# =============================================================================
-# TASK 4: Scatter plot for fixed acidity and citric acid
-# =============================================================================
 
 print("\n" + "="*80)
 print("TASK 4: SCATTER PLOT - FIXED ACIDITY vs CITRIC ACID")
@@ -419,10 +351,6 @@ citric acid. This reveals:
    likely have similar effects on wine quality - both contributing to the 
    wine's tartness and overall flavor profile.
 """)
-
-# =============================================================================
-# TASK 5: Histogram of quality attribute
-# =============================================================================
 
 print("\n" + "="*80)
 print("TASK 5: HISTOGRAM OF QUALITY ATTRIBUTE")
@@ -463,15 +391,10 @@ The histogram reveals important characteristics of wine quality distribution:
    - Quality prediction models should account for this imbalanced distribution
 """)
 
-# =============================================================================
-# TASK 6: Box plots for alcohol and pH by quality classes
-# =============================================================================
-
 print("\n" + "="*80)
 print("TASK 6: BOX PLOTS FOR ALCOHOL AND pH BY QUALITY CLASSES")
 print("="*80)
 
-# Create quality class labels
 def categorize_quality(quality):
     if quality < 4:
         return 'Bad'
@@ -484,7 +407,6 @@ df['quality_class'] = df['quality'].apply(categorize_quality)
 
 show_plot('Box Plots: Alcohol and pH Analysis', plot_box_plots, 5, 5)
 
-# Print statistics for each quality class
 print("\nAlcohol Statistics by Quality Class:")
 alcohol_stats = df.groupby('quality_class')['alcohol'].describe()
 print(alcohol_stats)
@@ -527,10 +449,6 @@ pH ANALYSIS:
    - pH differences are subtle but may indicate acidity balance importance
    - Both attributes show potential as quality predictors
 """)
-
-# =============================================================================
-# TASK 7: Conclusion
-# =============================================================================
 
 print("\n" + "="*80)
 print("TASK 7: CONCLUSION")
